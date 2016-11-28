@@ -14,7 +14,7 @@
 
 
 
-consGSAplot <-
+consGSA <-
   function(Pval,
            FC,
            GS) {
