@@ -13,6 +13,10 @@
 #                       genesets should be included in barchart.
 #             Pcutoff   cutoff for adjusted P-values of differentially expressed
 #                       genes. Recommended is 0.05.
+#             distinct  'distinct' if distinct-up and -down should be used for rank
+#                       cutoffs. 'distinct' will give less results, but more clearly
+#                       up or down regulated. 'mixed' will give more results, but
+#                       this will also include GO-terms with mixed regulation.
 #             savePlot  true if plot should be saved as file, false if not
 #             title     short title used in plot and filename
 # Output:     plot      the plot
@@ -31,6 +35,7 @@ consGSAplot <-
            GS,
            rankScore,
            Pcutoff,
+           distinct,
            savePlot,
            title) {
     require(ggplot2)
@@ -44,27 +49,31 @@ consGSAplot <-
     non <- consensusScores(resList, class = "non", plot = F)
     df <- data.frame(Name=rownames(non$rankMat[non$rankMat[,1]<rankScore+1,])) # Select any non-directional with rank =< rankScore.
     
-    # # This code only selects where up- or down-directional rank is also =< rankScore. Used for Yarrowia paper 2.
-    # up <-
-    #   consensusScores(resList,
-    #                   class = "distinct",
-    #                   direction = "up",
-    #                   plot = F)
-    # dn <-
-    #   consensusScores(resList,
-    #                   class = "distinct",
-    #                   direction = "down",
-    #                   plot = F)
-    # non <-
-    #   non$rankMat[non$rankMat[, "ConsScore"] < rankScore + 1 , , drop = F]
-    # dn <-
-    #   dn$rankMat[dn$rankMat[, "ConsScore"] < rankScore + 1, , drop = F]
-    # up <-
-    #   up$rankMat[up$rankMat[, "ConsScore"] < rankScore + 1, , drop = F]
-    # dn <- dn[rownames(dn) %in% rownames(non), , drop = F]
-    # up <- up[rownames(up) %in% rownames(non), , drop = F]
-    # 
-    # df <- data.frame(Name = c(rownames(up), rownames(dn)))
+if (distinct=='distinct') {
+  up <-
+    consensusScores(resList,
+                    class = "distinct",
+                    direction = "up",
+                    plot = F)
+  dn <-
+    consensusScores(resList,
+                    class = "distinct",
+                    direction = "down",
+                    plot = F)
+  non <-
+    non$rankMat[non$rankMat[, "ConsScore"] < rankScore + 1 , , drop = F]
+  dn <-
+    dn$rankMat[dn$rankMat[, "ConsScore"] < rankScore + 1, , drop = F]
+  up <-
+    up$rankMat[up$rankMat[, "ConsScore"] < rankScore + 1, , drop = F]
+  dn <- dn[rownames(dn) %in% rownames(non), , drop = F]
+  up <- up[rownames(up) %in% rownames(non), , drop = F]
+
+  df <- data.frame(Name = c(rownames(up), rownames(dn)))
+}
+
+    sumTable<-GSAsummaryTable(resList$mean,save=F)
+
     df <-
       merge(df, sumTable[, c("Name", "Genes (up)", "Genes (down)",
                              "Genes (tot)")])
@@ -75,7 +84,7 @@ consGSAplot <-
     df$lowup <- 0
     df$lowdown <- 0
     
-    tmp <- gsaRes1$gsc[names(gsaRes1$gsc) %in% df$geneset]
+    tmp <- resList$mean$gsc[names(resList$mean$gsc) %in% df$geneset]
     tmp <- tmp[order(names(tmp))]
     
     for (gset in 1:length(tmp)) {
