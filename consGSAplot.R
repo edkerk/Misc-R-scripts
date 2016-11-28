@@ -5,7 +5,8 @@
 #     regulated genes. A p-value cutoff is used to signify what genes have
 #     significantly changed expression.
 #
-# Input:      Pval      named vector of gene-level adjusted P-values
+# Input:      resList   result list from consensus GSA, ideally from consGSA.R
+#             Pval      named vector of gene-level adjusted P-values
 #             FC        named vector of gene-level log2 fold-changes
 #             GS        gene-set, as loaded usign Piano
 #             rankScore cutoff for non-directional consensus score, whether
@@ -16,6 +17,7 @@
 #             title     short title used in plot and filename
 # Output:     plot      the plot
 #
+# 2016-11-28 EJK: Separate running of GSA from plotting. Use consGSA.R first.
 # 2016-08-22 EJK: Made some adjustments to automatically resize PDF depending
 #                 on number of significant GO terms.
 # 2016-05-16 Eduard Kerkhoven (eduardk@chalmers.se)
@@ -23,7 +25,8 @@
 
 
 consGSAplot <-
-  function(Pval,
+  function(resList,
+           Pval,
            FC,
            GS,
            rankScore,
@@ -37,94 +40,31 @@ consGSAplot <-
     require(tidyr)
     require(scales)
     
-    #  if (!exists("rankScore")) # Attempt to set default settings, not sure how to do this...
-    
-    # Find out number of processor cores, run GSA on n-1 cores.
-    cores <- as.numeric(detectCores())
-    cat("Running GSA 1/5")
-    gsaRes1 <- runGSA(
-      Pval,
-      FC,
-      geneSetStat = "mean",
-      gsc = GS,
-      nPerm = round(1000 / cores) * cores,
-      gsSizeLim = c(5, 500),
-      ncpus = cores
-    )
-    cat("Running GSA 2/5")
-    gsaRes2 <- runGSA(
-      Pval,
-      FC,
-      geneSetStat = "median",
-      gsc = GS,
-      nPerm = round(1000 / cores) * cores,
-      gsSizeLim = c(5, 500),
-      ncpus = cores
-    )
-    cat("Running GSA 3/5")
-    gsaRes3 <- runGSA(
-      Pval,
-      FC,
-      geneSetStat = "sum",
-      gsc = GS,
-      nPerm = round(1000 / cores) * cores,
-      gsSizeLim = c(5, 500),
-      ncpus = cores
-    )
-    cat("Running GSA 4/5")
-    gsaRes4 <- runGSA(
-      Pval,
-      FC,
-      geneSetStat = "stouffer",
-      gsc = GS,
-      nPerm = round(1000 / cores) * cores,
-      gsSizeLim = c(5, 500),
-      ncpus = cores
-    )
-    cat("Running GSA 5/5")
-    gsaRes5 <- runGSA(
-      Pval,
-      FC,
-      geneSetStat = "tailStrength",
-      gsc = GS,
-      nPerm = round(1000 / cores) * cores,
-      gsSizeLim = c(5, 500),
-      ncpus = cores
-    )
-    # No maxmean and fisher: don't support direction. No gsea or
-    # wilcoxon, too slow.
-    cat("Reorganizing data and prepare for plotting")
-    sumTable <-
-      GSAsummaryTable(gsaRes2, save = F)  # Needed to extract genesets names and gene numbers
-    # Combine results in list
-    resList <- list(gsaRes1, gsaRes2, gsaRes3, gsaRes4, gsaRes5)
-    resList <-
-      setNames(resList,
-               c("mean", "median", "sum", "stouffer",
-                 "tailStrength"))
-    
     # Extract non-directional, distinct up and down genesets.
     non <- consensusScores(resList, class = "non", plot = F)
-    up <-
-      consensusScores(resList,
-                      class = "distinct",
-                      direction = "up",
-                      plot = F)
-    dn <-
-      consensusScores(resList,
-                      class = "distinct",
-                      direction = "down",
-                      plot = F)
-    non <-
-      non$rankMat[non$rankMat[, "ConsScore"] < rankScore + 1, , drop = F]
-    dn <-
-      dn$rankMat[dn$rankMat[, "ConsScore"] < rankScore + 1, , drop = F]
-    up <-
-      up$rankMat[up$rankMat[, "ConsScore"] < rankScore + 1, , drop = F]
-    dn <- dn[rownames(dn) %in% rownames(non), , drop = F]
-    up <- up[rownames(up) %in% rownames(non), , drop = F]
+    df <- data.frame(Name=rownames(non$rankMat[non$rankMat[,1]<rankScore+1,])) # Select any non-directional with rank =< rankScore.
     
-    df <- data.frame(Name = c(rownames(up), rownames(dn)))
+    # # This code only selects where up- or down-directional rank is also =< rankScore. Used for Yarrowia paper 2.
+    # up <-
+    #   consensusScores(resList,
+    #                   class = "distinct",
+    #                   direction = "up",
+    #                   plot = F)
+    # dn <-
+    #   consensusScores(resList,
+    #                   class = "distinct",
+    #                   direction = "down",
+    #                   plot = F)
+    # non <-
+    #   non$rankMat[non$rankMat[, "ConsScore"] < rankScore + 1 , , drop = F]
+    # dn <-
+    #   dn$rankMat[dn$rankMat[, "ConsScore"] < rankScore + 1, , drop = F]
+    # up <-
+    #   up$rankMat[up$rankMat[, "ConsScore"] < rankScore + 1, , drop = F]
+    # dn <- dn[rownames(dn) %in% rownames(non), , drop = F]
+    # up <- up[rownames(up) %in% rownames(non), , drop = F]
+    # 
+    # df <- data.frame(Name = c(rownames(up), rownames(dn)))
     df <-
       merge(df, sumTable[, c("Name", "Genes (up)", "Genes (down)",
                              "Genes (tot)")])
