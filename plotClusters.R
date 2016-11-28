@@ -1,15 +1,15 @@
 # Plot cluster graphs
 # Input:
-#           kmeans    Output from kmeans clustering (should contain kmeans$cluster)
+#           clusters  Cluster information per gene (from kmeans: fit$cluster; from hclust: after cutree)
 #           normData  Matrix containing normalized data (was used as input for kmeans clustering
 #           centroid  Either 'centroid', 'genes' or 'both'
 # Output:
 #           plots
 ## 2016-10-25 Eduard Kerkhoven
 
-plotClusters <- function(k, normdata, centroid) {
+plotClusters <- function(clusters, normdata, centroid) {
   # Determine number of clusters
-    max(k$cluster)
+    max(clusters)
     out <- data.frame(
       gene = character(),
       variable = character(),
@@ -23,9 +23,9 @@ plotClusters <- function(k, normdata, centroid) {
       variable=character(),
       stringsAsFactors=FALSE
     )
-    for (i in 1:max(k$cluster)) {
+    for (i in 1:max(clusters)) {
       # Loop through all clusters
-      dat <- names(k$cluster[k$cluster == i]) # Genes in cluster
+      dat <- names(clusters[clusters == i]) # Genes in cluster
       dat <-
         data.frame(normdata[dat, ]) # Extract normalized data for genes in cluster
       cent<-data.frame(value=colMeans(dat,na.rm=T))
