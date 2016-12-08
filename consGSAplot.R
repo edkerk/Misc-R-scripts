@@ -6,9 +6,6 @@
 #     significantly changed expression.
 #
 # Input:      resList   result list from consensus GSA, ideally from consGSA.R
-#             Pval      named vector of gene-level adjusted P-values
-#             FC        named vector of gene-level log2 fold-changes
-#             GS        gene-set, as loaded usign Piano
 #             rankScore cutoff for non-directional consensus score, whether
 #                       genesets should be included in barchart.
 #             Pcutoff   cutoff for adjusted P-values of differentially expressed
@@ -30,9 +27,6 @@
 
 consGSAplot <-
   function(resList,
-           Pval,
-           FC,
-           GS,
            rankScore,
            Pcutoff,
            distinct,
@@ -48,6 +42,11 @@ consGSAplot <-
     # Extract non-directional, distinct up and down genesets.
     non <- consensusScores(resList, class = "non", plot = F)
     df <- data.frame(Name=rownames(non$rankMat[non$rankMat[,1]<rankScore+1,])) # Select any non-directional with rank =< rankScore.
+    
+    Pval <- resList[[1]]$geneLevelStats
+    FC <- resList[[1]]$directions
+    GS <- resList[[1]]$gsc
+
     
 if (distinct=='distinct') {
   up <-
@@ -72,11 +71,8 @@ if (distinct=='distinct') {
   df <- data.frame(Name = c(rownames(up), rownames(dn)))
 }
 
-    sumTable<-GSAsummaryTable(resList$mean,save=F)
-
-    df <-
-      merge(df, sumTable[, c("Name", "Genes (up)", "Genes (down)",
-                             "Genes (tot)")])
+    sumTable<-data.frame(Name=names(resList[[1]]$gsc),up=resList[[1]]$nGenesUp,dn=resList[[1]]$nGenesDn,tot=resList[[1]]$nGenesTot)
+    df <- merge(df, sumTable)
     colnames(df) <- c("geneset", "up", "dn", "tot")
     
     df$highup <- 0
@@ -84,26 +80,27 @@ if (distinct=='distinct') {
     df$lowup <- 0
     df$lowdown <- 0
     
-    tmp <- resList$mean$gsc[names(resList$mean$gsc) %in% df$geneset]
+    tmp <- GS[names(GS) %in% df$geneset]
     tmp <- tmp[order(names(tmp))]
     
     for (gset in 1:length(tmp)) {
       df[gset,]$highup <- sum(tmp[[gset]] %in% names(Pval[Pval <
-                                                            Pcutoff]) &
-                                tmp[[gset]] %in% names(FC[FC > 0]))  # Highly significant up
+                                                            Pcutoff,]) &
+                                tmp[[gset]] %in% names(FC[FC > 0,]))  # Highly significant up
       df[gset,]$highdown <- sum(tmp[[gset]] %in% names(Pval[Pval <
-                                                              Pcutoff]) &
-                                  tmp[[gset]] %in% names(FC[FC < 0]))  # Highly significant down
+                                                              Pcutoff,]) &
+                                  tmp[[gset]] %in% names(FC[FC < 0,]))  # Highly significant down
       df[gset,]$lowup <- sum(tmp[[gset]] %in% names(Pval[Pval >
-                                                           Pcutoff]) &
-                               tmp[[gset]] %in% names(FC[FC > 0]))  # Low significant up
+                                                           Pcutoff,]) &
+                               tmp[[gset]] %in% names(FC[FC > 0,]))  # Low significant up
       df[gset,]$lowdown <- sum(tmp[[gset]] %in% names(Pval[Pval >
-                                                             Pcutoff]) &
-                                 tmp[[gset]] %in% names(FC[FC < 0]))  # Low significant down
+                                                             Pcutoff,]) &
+                                 tmp[[gset]] %in% names(FC[FC < 0,]))  # Low significant down
     }
     
     df$geneset <- factor(df$geneset, levels = df[order(df$up / df$dn),
                                                  1])  # Order from mostly up to mostly down.
+    df$geneset<-gsub('(.{50})(.+)','\\1...',df$geneset)
     
     df2 <- gather(df[, c("geneset", "highup", "highdown", "lowup",
                          "lowdown")], "directAndSignif", "genes", 2:5)
@@ -123,7 +120,7 @@ if (distinct=='distinct') {
     df2$order[df2$directAndSignif == "lowdown"] <- 3
     df2$order[df2$directAndSignif == "highdown"] <- 4
     df2 <- df2[order(df2$order),]
-    
+
     grht <-
       3 + (dim(df)[1] * 0.5) # Determine height of output graph in cm, 3 cm and additional 0.5 per GO term
     

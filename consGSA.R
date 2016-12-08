@@ -33,7 +33,7 @@ consGSA <-
       geneSetStat = "mean",
       gsc = GS,
       nPerm = round(1000 / cores) * cores,
-      gsSizeLim = c(5, 500),
+      gsSizeLim = c(5, 200),
       ncpus = cores
     )
     cat("Running GSA 2/5")
@@ -43,7 +43,7 @@ consGSA <-
       geneSetStat = "median",
       gsc = GS,
       nPerm = round(1000 / cores) * cores,
-      gsSizeLim = c(5, 500),
+      gsSizeLim = c(5, 200),
       ncpus = cores
     )
     cat("Running GSA 3/5")
@@ -53,7 +53,7 @@ consGSA <-
       geneSetStat = "sum",
       gsc = GS,
       nPerm = round(1000 / cores) * cores,
-      gsSizeLim = c(5, 500),
+      gsSizeLim = c(5, 200),
       ncpus = cores
     )
     cat("Running GSA 4/5")
@@ -63,7 +63,7 @@ consGSA <-
       geneSetStat = "stouffer",
       gsc = GS,
       nPerm = round(1000 / cores) * cores,
-      gsSizeLim = c(5, 500),
+      gsSizeLim = c(5, 200),
       ncpus = cores
     )
     cat("Running GSA 5/5")
@@ -73,7 +73,7 @@ consGSA <-
       geneSetStat = "tailStrength",
       gsc = GS,
       nPerm = round(1000 / cores) * cores,
-      gsSizeLim = c(5, 500),
+      gsSizeLim = c(5, 200),
       ncpus = cores
     )
     # No maxmean and fisher: don't support direction. No gsea or
