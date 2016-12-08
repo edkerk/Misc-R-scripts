@@ -39,5 +39,5 @@ filterLowReads<-function(x,repl,cpmCutoff,replCutoff,condCutoff){
   for (i in 1:length(repl)){
     lowLibs[,i]<-rowSums(cpms[,c(cols[i,1]:cols[i,2])]<cpmCutoff)>replCutoff
   }
-  out<-x[!rowSums(lowLibs)>replCutoff,]
+  out<-x[!rowSums(lowLibs)>condCutoff,]
 }
