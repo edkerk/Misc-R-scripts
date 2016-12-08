@@ -6,12 +6,12 @@
 #						(2) mean reference flux ('refFlux')
 #						(3) mean sample flux ('sampleFlux')
 #						(4) Z-scores of flux changes. ('ZF')
-#           protein     Data.frame with two columns column:
-#						(1) genes ('genes')
-#						(2) Z-scores of protein changes. ('ZP')
 #           RNA         Data.frame with one column:
 #						(1) genes ('genes')
 #						(2) Z-scores of RNA changes. ('ZR')
+#           protein     Data.frame with two columns column:
+#						(1) genes ('genes')
+#						(2) Z-scores of protein changes. ('ZP')
 # Output:
 #           out         data.frame with 6 columns: (1) gene; (2) rxnId; (3) rhoFP-score for
 #                       correlation between flux and protein; (4) rhoFR-score for correlation
@@ -24,31 +24,44 @@
 ## 2016-04-27 Eduard Kerkhoven (eduardk@chalmers.se)
 
 
-# corrFPR<-function(geneRxnId,flux,protein,RNA){
-corrFPR<-function(geneRxnId,flux,RNA){
+corrFPR<-function(geneRxnId,flux,RNA,protein){
+  if (missing(protein)){
+    message("No protein data provided")
+    }
+#corrFPR<-function(geneRxnId,flux,RNA){
   out<-geneRxnId
   out<-merge(out,flux,by='rxns',sort=F,all.x=T)
   out<-merge(out,RNA,by='genes',sort=F,all.x=T)
-#  out<-merge(out,protein,by='genes',sort=F,all.x=T)
+  if (!missing(protein)){
+    out<-merge(out,protein,by='genes',sort=F,all.x=T)
+  }
   # If reference and sample flux are both negative, then take the inverse Z-score, otherwise keep Z-score
   Idx<-which(out$sampleFlux<0 & out$refFlux<0)
   out$ZF[Idx]<--out$ZF[Idx]
   
   # If the flux changes direction, correlation between flux and protein/RNA doesn't make sense.
-#  out$rhoFP[out$sampleFlux*out$refFlux<0]<-'fluxDirectChange' 
+  if (!missing(protein)){
+    out$rhoFP[out$sampleFlux*out$refFlux<0]<-'fluxDirectChange'
+  }
   out$rhoFR[out$sampleFlux*out$refFlux<0]<-'fluxDirectChange'
   
   # Calculate rho scores as explained in Bordel et al., 2010
   out$rhoFR<-ifelse(!out$rhoFR%in%'fluxDirectChange',pnorm(out$ZF,0,1)*pnorm(out$ZR,0,1),out$rhoFR)
-#  out$rhoFP<-ifelse(!out$rhoFR%in%'fluxDirectChange',pnorm(out$ZF,0,1)*pnorm(out$ZP,0,1),out$rhoFP)
-#  out$rhoPR<-pnorm(out$ZR,0,1)*pnorm(out$ZP,0,1)
+  if (!missing(protein)){
+    out$rhoFP<-ifelse(!out$rhoFR%in%'fluxDirectChange',pnorm(out$ZF,0,1)*pnorm(out$ZP,0,1),out$rhoFP)
+    out$rhoPR<-pnorm(out$ZR,0,1)*pnorm(out$ZP,0,1)
+  }
   
   # If flux and protein/RNA are both down, then use absolute Z-scores to calculate rho-scores
   out$rhoFR<-ifelse(out$ZF<0 & out$ZR < 0 & !out$rhoFR%in%'fluxDirectChange', pnorm(abs(out$ZF),0,1)*pnorm(abs(out$ZR),0,1),out$rhoFR)
-#  out$rhoFP<-ifelse(out$ZF<0 & out$ZP < 0 & !out$rhoFP%in%'fluxDirectChange', pnorm(abs(out$ZF),0,1)*pnorm(abs(out$ZP),0,1),out$rhoFP)
-#  out$rhoPR<-ifelse(out$ZR < 0 & out$ZP < 0,pnorm(abs(out$ZR),0,1)*pnorm(abs(out$ZP),0,1),out$rhoPR)
+  if (!missing(protein)){
+    out$rhoFP<-ifelse(out$ZF<0 & out$ZP < 0 & !out$rhoFP%in%'fluxDirectChange', pnorm(abs(out$ZF),0,1)*pnorm(abs(out$ZP),0,1),out$rhoFP)
+    out$rhoPR<-ifelse(out$ZR < 0 & out$ZP < 0,pnorm(abs(out$ZR),0,1)*pnorm(abs(out$ZP),0,1),out$rhoPR)
+  }
   
   # Calculate final rhoFPR score by multiplying rhoFP and rhoFR scores.
- # out$rhoFPR<-suppressWarnings(t(as.numeric(out$rhoFP)*t(as.numeric(out$rhoFR)))) # Suppress warning that NAs are introduced due to multiplication of NaN values
+  if (!missing(protein)){
+    out$rhoFPR<-suppressWarnings(t(as.numeric(out$rhoFP)*t(as.numeric(out$rhoFR)))) # Suppress warning that NAs are introduced due to multiplication of NaN values
+  }
   return(out)
 }
