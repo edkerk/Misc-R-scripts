@@ -1,13 +1,18 @@
-# Generate a data.frame comparing two data sets:
+# Generate a data.frame comparing two data sets (for instance from random sampling of genome-scale model):
 # Input:
-#           x         Matrix with all the data, first columns are control,
-#                     remaining columns are samples
-#           repl      Number of replicates, should be equal for both data sets
+#         x         Matrix with all the data, first columns are control,
+#                   remaining columns are samples
+#         repl      Number of replicates, should be equal for both data sets
 # Output:
-#           out$FC    Log 2 fold-change
-#           out$adjP  Adjusted p-value (FDR corrected)
-#           out$z     Z-score
-## 2015-12-22 Eduard Kerkhoven
+#         out$FC    Log 2 fold-change
+#         out$p     p-value
+#         out$adjP  Adjusted p-value (FDR corrected)
+#         out$z     Z-score
+#
+#   Example usage:
+#   output <- tTestTable(x,1000)
+#
+# 2018-03-13  Eduard Kerkhoven
 
 tTestTable<-function(x,repl){ # is matrix with all data, repl is number of replicates
   fc<-log2(rowMeans(x[,(repl+1):(2*repl)])/rowMeans(x[,1:repl]))
