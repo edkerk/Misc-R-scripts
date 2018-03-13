@@ -2,12 +2,14 @@
 # Input:
 #           clusters  Cluster information per gene (from kmeans: fit$cluster; from hclust: after cutree)
 #           normData  Matrix containing normalized data (was used as input for kmeans clustering
-#           centroid  Either 'centroid', 'genes' or 'both'
+#           centroid  Either 'centroid', 'genes' or 'both' (default = 'both')
 # Output:
 #           plots
-## 2016-10-25 Eduard Kerkhoven
+#
+# 2018-03-13  Eduard Kerkhoven
 
-plotClusters <- function(clusters, normdata, centroid) {
+plotClusters <- function(clusters, normdata, centroid = 'both') {
+  library(reshape2)
   # Determine number of clusters
     max(clusters)
     out <- data.frame(
