@@ -9,7 +9,7 @@
 #             rankScore cutoff for non-directional consensus score, whether
 #                       genesets should be included in barchart.
 #             Pcutoff   cutoff for adjusted P-values of differentially expressed
-#                       genes. Recommended is 0.05.
+#                       genes. default is 0.05.
 #             distinct  'distinct' if distinct-up and -down should be used for rank
 #                       cutoffs. 'distinct' will give less results, but more clearly
 #                       up or down regulated. 'mixed' will give more results, but
@@ -18,20 +18,17 @@
 #             title     short title used in plot and filename
 # Output:     plot      the plot
 #
-# 2016-11-28 EJK: Separate running of GSA from plotting. Use consGSA.R first.
-# 2016-08-22 EJK: Made some adjustments to automatically resize PDF depending
-#                 on number of significant GO terms.
-# 2016-05-16 Eduard Kerkhoven (eduardk@chalmers.se)
+# 2018-03-13  Eduard Kerkhoven
 
 
 
 consGSAplot <-
   function(resList,
            rankScore,
-           Pcutoff,
-           distinct,
-           savePlot,
-           title) {
+           Pcutoff = 0.05,
+           distinct = 'distinct',
+           savePlot = TRUE,
+           title = 'Consensus GSA barchart') {
     library(ggplot2)
     library(piano)
     library(parallel)
