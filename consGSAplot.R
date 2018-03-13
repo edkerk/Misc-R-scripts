@@ -32,16 +32,16 @@ consGSAplot <-
            distinct,
            savePlot,
            title) {
-    require(ggplot2)
-    require(piano)
-    require(parallel)
-    require(snowfall)
-    require(tidyr)
-    require(scales)
+    library(ggplot2)
+    library(piano)
+    library(parallel)
+    library(snowfall)
+    library(tidyr)
+    library(scales)
     
     # Extract non-directional, distinct up and down genesets.
     non <- consensusScores(resList, class = "non", plot = F)
-    df <- data.frame(Name=rownames(non$rankMat[non$rankMat[,1]<rankScore+1,])) # Select any non-directional with rank =< rankScore.
+    df <- data.frame(Name=rownames(non$rankMat[non$rankMat[,1] < rankScore + 1,])) # Select any non-directional with rank =< rankScore.
     
     Pval <- resList[[1]]$geneLevelStats
     FC <- resList[[1]]$directions
@@ -102,6 +102,18 @@ if (distinct=='distinct') {
                                                  1])  # Order from mostly up to mostly down.
     df$geneset<-gsub('(.{50})(.+)','\\1...',df$geneset)
     
+    # Add ALL genes
+    df3 <- data.frame(geneset = 'All')
+    df3$geneset <- 'All'
+    df3$up <- sum(FC > 0)
+    df3$dn <- sum(FC < 0)
+    df3$tot <- length(FC)
+    df3$highup <- sum(Pval < Pcutoff & FC > 0) 
+    df3$highdown <- sum(Pval < Pcutoff & FC < 0) 
+    df3$lowup <- sum(Pval > Pcutoff & FC > 0) 
+    df3$lowdown <- sum(Pval > Pcutoff & FC < 0)
+    df<-rbind(df,df3)
+    
     df2 <- gather(df[, c("geneset", "highup", "highdown", "lowup",
                          "lowdown")], "directAndSignif", "genes", 2:5)
     
@@ -112,7 +124,10 @@ if (distinct=='distinct') {
       factor(df2$directAndSignif,
              levels = c("highup",
                         "lowup", "lowdown", "highdown")) # Pointless, order is not maintained by ggplot if stat="identity" is used
+
     
+    
+        
     # Very inelegant way to order significance and direction of changed genes, instead of order mentioned above
     df2$order <- 0
     df2$order[df2$directAndSignif == "highup"] <- 1
@@ -144,7 +159,7 @@ if (distinct=='distinct') {
       theme_set(theme_bw()) + theme(
         text = element_text(size = 7),
         legend.position = "top",
-        legend.key.size = unit(7, "points"),
+        #legend.key.size = unit(7, "points"),
         axis.text = element_text(colour = "black"),
         panel.grid = element_blank(),
         line = element_line(size = 0.25),
