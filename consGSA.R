@@ -1,92 +1,143 @@
 # Description:
-#     Performs consensus GSA using five common (and relatively fast) methods that are
-#     included in Piano: "mean", "median", "sum", "stouffer" and "tailStrength".
+#     Performs consensus GSA using eight common (and relatively fast) methods that are
+#     included in Piano.
 #     Runs on maximum number of CPU nodes. Gives resList as output, which can be
 #     used to make a plot using consGSAplot.
 #
 # Input:      Pval      named vector of gene-level adjusted P-values
 #             FC        named vector of gene-level log2 fold-changes
-#             GS        gene-set, as loaded usign Piano
+#             gsc       gene-set, as loaded using Piano
+#             nPerm     the number of permutations to use for gene sampling, default = 1000
+#             gsSizeDn  cutoff-value for minimum number of genes in gene-sets, default = 5
+#             gsSizeUp  cutoff-value for maximum number of genes in gene-sets, default = 500
+#
 # Output:     resList   results list
 #
-# 2016-11-28 EJK: Separate funtion to run consensus GSA.
-# 2016-05-16 Eduard Kerkhoven (eduardk@chalmers.se)
+# 2018-03-13  Eduard Kerkhoven
 
 
 
 consGSA <-
   function(Pval,
            FC,
-           GS) {
+           gsc,
+           nPerm = 1000,
+           gsSizeDn = 5,
+           gsSizeUp = 500) {
     require(piano)
     require(parallel)
     require(snowfall)
     require(tidyr)
-    #  if (!exists("rankScore")) # Attempt to set default settings, not sure how to do this...
     
-    # Find out number of processor cores, run GSA on n-1 cores.
+    # Find out number of processor cores, run GSA on all cores.
     cores <- as.numeric(detectCores())
-    cat("Running GSA 1/5")
+    cat("Run GSA on", cores, "CPU cores.\n")
+
+    cat("Running GSA 1/10 (mean)")
     gsaRes1 <- runGSA(
       Pval,
       FC,
       geneSetStat = "mean",
-      gsc = GS,
-      nPerm = round(1000 / cores) * cores,
-      gsSizeLim = c(5, 200),
+      gsc = gsc,
+      nPerm = round(nPerm / cores) * cores,
+      gsSizeLim = c(gsSizeDn, gsSizeUp),
       ncpus = cores
     )
-    cat("Running GSA 2/5")
+    cat("Running GSA 2/10 (median)")
     gsaRes2 <- runGSA(
       Pval,
       FC,
       geneSetStat = "median",
-      gsc = GS,
-      nPerm = round(1000 / cores) * cores,
-      gsSizeLim = c(5, 200),
+      gsc = gsc,
+      nPerm = round(nPerm / cores) * cores,
+      gsSizeLim = c(gsSizeDn, gsSizeUp),
       ncpus = cores
     )
-    cat("Running GSA 3/5")
+    cat("Running GSA 3/10 (sum)")
     gsaRes3 <- runGSA(
       Pval,
       FC,
       geneSetStat = "sum",
-      gsc = GS,
-      nPerm = round(1000 / cores) * cores,
-      gsSizeLim = c(5, 200),
+      gsc = gsc,
+      nPerm = round(nPerm / cores) * cores,
+      gsSizeLim = c(gsSizeDn, gsSizeUp),
       ncpus = cores
     )
-    cat("Running GSA 4/5")
+    cat("Running GSA 4/10 (stouffer)")
     gsaRes4 <- runGSA(
       Pval,
       FC,
       geneSetStat = "stouffer",
-      gsc = GS,
-      nPerm = round(1000 / cores) * cores,
-      gsSizeLim = c(5, 200),
+      gsc = gsc,
+      nPerm = round(nPerm / cores) * cores,
+      gsSizeLim = c(gsSizeDn, gsSizeUp),
       ncpus = cores
     )
-    cat("Running GSA 5/5")
+    cat("Running GSA 5/10 (tailStrength)")
     gsaRes5 <- runGSA(
       Pval,
       FC,
       geneSetStat = "tailStrength",
-      gsc = GS,
-      nPerm = round(1000 / cores) * cores,
-      gsSizeLim = c(5, 200),
+      gsc = gsc,
+      nPerm = round(nPerm / cores) * cores,
+      gsSizeLim = c(gsSizeDn, gsSizeUp),
       ncpus = cores
     )
-    # No maxmean and fisher: don't support direction. No gsea or
-    # wilcoxon, too slow.
+    cat("Running GSA 6/10 (gsea)")
+    gsaRes6 <- runGSA(
+      FC,
+      geneSetStat = "gsea",
+      gsc = gsc,
+      nPerm = round(nPerm / cores) * cores,
+      gsSizeLim = c(gsSizeDn, gsSizeUp),
+      ncpus = cores
+    )
+    cat("Running GSA 7/10 (fisher)")
+    gsaRes7 <- runGSA(
+      Pval,
+      FC,
+      geneSetStat = "fisher",
+      gsc = gsc,
+      nPerm = round(nPerm / cores) * cores,
+      gsSizeLim = c(gsSizeDn, gsSizeUp),
+      ncpus = cores
+    )
+    cat("Running GSA 8/10 (maxmean)")
+    gsaRes8 <- runGSA(
+      FC,
+      geneSetStat = "maxmean",
+      gsc = gsc,
+      nPerm = round(nPerm / cores) * cores,
+      gsSizeLim = c(gsSizeDn, gsSizeUp),
+      ncpus = cores
+    )
+    cat("Running GSA 9/10 (fgsea)")
+    gsaRes6 <- runGSA(
+      FC,
+      geneSetStat = "fgsea",
+      gsc = gsc,
+      nPerm = round(nPerm / cores) * cores,
+      gsSizeLim = c(gsSizeDn, gsSizeUp),
+      ncpus = cores
+    )
+        cat("Running GSA 10/10 (page)")
+    gsaRes6 <- runGSA(
+      FC,
+      geneSetStat = "page",
+      gsc = gsc,
+      nPerm = round(nPerm / cores) * cores,
+      gsSizeLim = c(gsSizeDn, gsSizeUp),
+      ncpus = cores
+    )
+    # No maxmean and fisher: don't support direction. No wilcoxon, too slow.
     cat("Reorganizing data and prepare for plotting")
-    sumTable <-
-      GSAsummaryTable(gsaRes2, save = F)  # Needed to extract genesets names and gene numbers
     # Combine results in list
-    resList <- list(gsaRes1, gsaRes2, gsaRes3, gsaRes4, gsaRes5)
+    resList <- list(gsaRes1, gsaRes2, gsaRes3, gsaRes4, gsaRes5, gsaRes6, gsaRes7,
+                    gsaRes8, gsaRes9, gsaRes10)
     resList <-
       setNames(resList,
                c("mean", "median", "sum", "stouffer",
-                 "tailStrength"))
+                 "tailStrength", "gsea", "fisher", "maxmean", "fgsea", "page"))
     
 return(resList)
-  }
+}
