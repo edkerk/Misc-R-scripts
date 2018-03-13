@@ -26,7 +26,7 @@ consGSAplot <-
   function(resList,
            rankScore,
            Pcutoff = 0.05,
-           distinct = 'distinct',
+           distinct = 'mixed',
            savePlot = TRUE,
            title = 'Consensus GSA barchart') {
     library(ggplot2)
