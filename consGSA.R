@@ -112,7 +112,7 @@ consGSA <-
       ncpus = cores
     )
     cat("Running GSA 9/10 (fgsea)")
-    gsaRes6 <- runGSA(
+    gsaRes9 <- runGSA(
       FC,
       geneSetStat = "fgsea",
       gsc = gsc,
@@ -121,7 +121,7 @@ consGSA <-
       ncpus = cores
     )
         cat("Running GSA 10/10 (page)")
-    gsaRes6 <- runGSA(
+    gsaRes10 <- runGSA(
       FC,
       geneSetStat = "page",
       gsc = gsc,
