@@ -175,6 +175,7 @@ if (distinct=='distinct') {
     
     
     if (savePlot == T) {
+      title = gsub("[[:punct:]]", "_", title)
       plot + ggsave(
         file = paste0("consGSAplot_", title, ".pdf"),
         device = "pdf",
